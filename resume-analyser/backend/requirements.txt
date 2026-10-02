@@ -26,8 +26,6 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 aiofiles==23.2.1
 structlog==24.1.0
-sqlalchemy==2.0.30
-alembic==1.13.2
 # Rate limiting (shared counters across workers/replicas)
 redis==5.0.4
 # Prometheus metrics at /metrics

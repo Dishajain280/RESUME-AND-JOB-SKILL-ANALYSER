@@ -149,6 +149,11 @@ class AnalysisResult(BaseModel):
 class AnalyseRequest(BaseModel):
     resume_id: str
     job: JobDescriptionRequest
+    # Optional parsed-resume payload. When present the analysis runs
+    # directly on it, with no server-side lookup — required for
+    # serverless deployments where the store is ephemeral per
+    # instance (upload and analysis may hit different instances).
+    parsed: Optional[ResumeSection] = None
 
 
 class AnalysisListItem(BaseModel):

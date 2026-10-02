@@ -117,16 +117,6 @@ export interface AnalysisListItem {
   created_at: string
 }
 
-export interface AnalysisHistoryResponse {
-  items: AnalysisListItem[]
-  /** Count of ALL matching rows (for pagination controls) */
-  total: number
-  /** Page size actually applied (echoed back) */
-  limit: number
-  /** Row offset actually applied (echoed back) */
-  offset: number
-}
-
 export interface JobRoleTemplate {
   id: string
   title: string
@@ -138,4 +128,10 @@ export interface JobRoleTemplate {
 export interface AnalyseRequest {
   resume_id: string
   job: JobDescriptionRequest
+  /**
+   * Parsed resume sent along with the request (stateless mode).
+   * Lets analysis succeed on serverless hosting where the
+   * backend's per-instance store may not hold the resume_id.
+   */
+  parsed?: ResumeSection
 }

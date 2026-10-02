@@ -27,11 +27,7 @@ services:
       DEBUG: "false"
       REDIS_URL: redis://redis:6379/0
       TRUST_PROXY_HEADERS: "true"   # nginx overwrites X-Forwarded-For
-      AUTO_CREATE_TABLES: "false"   # entrypoint runs `alembic upgrade head`
-      DATABASE_URL: sqlite:////data/resume_analyser.db
       WEB_CONCURRENCY: "2"          # uvicorn workers
-    volumes:
-      - api-data:/data              # SQLite persistence (swap for Postgres in prod)
     depends_on:
       redis:
         condition: service_healthy
@@ -52,7 +48,6 @@ services:
       - internal
 
 volumes:
-  api-data:
   redis-data:
 
 networks:

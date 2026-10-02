@@ -5,6 +5,7 @@ import ResumeUploader from '@/components/resume/ResumeUploader'
 import ParsedResumeView from '@/components/resume/ParsedResumeView'
 import JobDescriptionForm from '@/components/analysis/JobDescriptionForm'
 import { runAnalysis } from '@/services/apiService'
+import { loadUpload, saveResult, recordHistory, saveUpload } from '@/lib/persistence'
 import type { ResumeUploadResponse, JobDescriptionRequest } from '@/types/api'
 import { ChevronRight, ChevronLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -14,12 +15,16 @@ type Step = 1 | 2
 
 export default function AnalysePage() {
   const navigate = useNavigate()
-  const [step, setStep] = useState<Step>(1)
-  const [upload, setUpload] = useState<ResumeUploadResponse | null>(null)
+  // Restore the last upload from browser storage so a refresh
+  // doesn't lose the parsed resume (no server-side database).
+  const [restoredUpload] = useState<ResumeUploadResponse | null>(() => loadUpload())
+  const [step, setStep] = useState<Step>(restoredUpload ? 2 : 1)
+  const [upload, setUpload] = useState<ResumeUploadResponse | null>(restoredUpload)
   const [isAnalysing, setIsAnalysing] = useState(false)
 
   const handleUploaded = (data: ResumeUploadResponse) => {
     setUpload(data)
+    saveUpload(data)
     // Auto-advance to step 2 once uploaded
     setTimeout(() => setStep(2), 600)
   }
@@ -28,7 +33,23 @@ export default function AnalysePage() {
     if (!upload) return
     setIsAnalysing(true)
     try {
-      const result = await runAnalysis({ resume_id: upload.resume_id, job: jobReq })
+      // `parsed` makes the request stateless: the backend can
+      // analyse without a server-side resume lookup (needed
+      // on serverless hosting, where the store is ephemeral).
+      const result = await runAnalysis({
+        resume_id: upload.resume_id,
+        job: jobReq,
+        parsed: upload.parsed,
+      })
+      saveResult(result)
+      recordHistory({
+        analysis_id: result.analysis_id,
+        resume_id: result.resume_id,
+        job_title: result.job_title,
+        company: result.company,
+        overall_score: result.overall_score,
+        created_at: new Date().toISOString(),
+      })
       navigate(`/results/${result.analysis_id}`)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Analysis failed. Please try again.'

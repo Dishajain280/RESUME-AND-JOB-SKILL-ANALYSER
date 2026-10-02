@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listAnalyses } from '@/services/apiService'
-import { Loader2, AlertCircle, FileText, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { loadHistory } from '@/lib/persistence'
+import { FileText, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { scoreColor, scoreLabel, formatDate } from '@/lib/utils'
 
 const PAGE_SIZE = 10
@@ -10,17 +9,17 @@ const PAGE_SIZE = 10
 export default function HistoryPage() {
   const [offset, setOffset] = useState(0)
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['analysis-history', offset],
-    queryFn: () => listAnalyses(undefined, PAGE_SIZE, offset),
-    staleTime: 60_000,
-    placeholderData: (prev) => prev, // keep the current page visible while loading the next
-  })
+  // History lives in this browser's localStorage — no server-side
+  // storage exists, so pagination slices the local list.
+  const allItems = useMemo(() => loadHistory(), [])
+  const items = useMemo(
+    () => allItems.slice(offset, offset + PAGE_SIZE),
+    [allItems, offset],
+  )
 
-  const total = data?.total ?? 0
-  const items = data?.items ?? []
+  const total = allItems.length
   const hasPrev = offset > 0
-  const hasNext = offset + items.length < total
+  const hasNext = offset + PAGE_SIZE < total
   const page = Math.floor(offset / PAGE_SIZE) + 1
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
@@ -38,25 +37,13 @@ export default function HistoryPage() {
         </Link>
       </div>
 
-      {isLoading && !data && (
-        <div className="flex items-center justify-center py-20 text-gray-400">
-          <Loader2 className="w-8 h-8 animate-spin mr-3" />
-          <span className="text-sm">Loading history…</span>
-        </div>
-      )}
-
-      {isError && (
-        <div className="flex items-center gap-3 text-red-500 text-sm bg-red-50 rounded-xl p-4">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          Failed to load history. Make sure the backend is running.
-        </div>
-      )}
-
-      {data && items.length === 0 && (
+      {items.length === 0 && (
         <div className="card text-center py-20">
           <FileText className="w-12 h-12 text-gray-200 mx-auto mb-4" />
           <h3 className="font-semibold text-gray-600">No analyses yet</h3>
-          <p className="text-sm text-gray-400 mt-2">Upload your resume to get started.</p>
+          <p className="text-sm text-gray-400 mt-2">
+            Upload your resume to get started. History is saved in this browser.
+          </p>
           <Link to="/analyse" className="btn-primary inline-flex mt-6">
             Analyse My Resume
           </Link>

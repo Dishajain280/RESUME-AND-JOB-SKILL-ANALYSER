@@ -17,7 +17,6 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.api.v1.router import api_router
-from app.db.database import init_db
 from app.middleware.rate_limit import RateLimitMiddleware
 
 # ── Structured logging ────────────────────────────────────────────────────────
@@ -46,11 +45,6 @@ log = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create DB tables on startup when enabled. Production deployments should
-    # run `alembic upgrade head` instead (set AUTO_CREATE_TABLES=false).
-    if settings.AUTO_CREATE_TABLES:
-        init_db()
-
     # Pre-load NLP models so the first request doesn't pay a multi-second
     # (or model-download) penalty. No-op when disabled in tests.
     if settings.WARM_UP_MODELS_ON_STARTUP:
@@ -151,20 +145,11 @@ else:  # metrics helper is a no-op when disabled
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
-@app.get("/health", tags=["health"], summary="Health check (verifies DB connectivity)")
+@app.get("/health", tags=["health"], summary="Health check")
 async def health_check():
-    """Liveness + DB readiness probe. Returns 503 when the database is unreachable."""
-    from app.db.database import check_db
-    from app.core.metrics import set_db_health
-
-    reachable = check_db()
-    set_db_health(reachable)
-    if not reachable:
-        return JSONResponse(
-            status_code=503,
-            content={"status": "unhealthy", "database": "unreachable", "version": settings.APP_VERSION},
-        )
-    return {"status": "healthy", "database": "ok", "version": settings.APP_VERSION}
+    """Liveness probe. The app is stateless (no database), so healthy
+    means the process is up and serving."""
+    return {"status": "healthy", "version": settings.APP_VERSION}
 
 
 @app.exception_handler(Exception)

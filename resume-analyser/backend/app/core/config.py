@@ -58,6 +58,9 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        # Tolerate stale env vars (e.g. DATABASE_URL left over from
+        # the old database-backed deployment) instead of crashing.
+        extra="ignore",
     )
 
     APP_NAME: str = "AI Resume & Job Skill Analyser"
@@ -87,12 +90,6 @@ class Settings(BaseSettings):
                     "use at least 32 chars of entropy."
                 )
         return self
-
-    # ── Database ─────────────────────────────────────────────────────────────
-    # SQLite by default; swap to PostgreSQL URL for production.
-    DATABASE_URL: str = "sqlite:///./resume_analyser.db"
-    # In DEBUG (dev/tests) create_all is convenient; production must use Alembic.
-    AUTO_CREATE_TABLES: bool = True
 
     # ── CORS / proxy ─────────────────────────────────────────────────────────
     ALLOWED_ORIGINS: list[str] = [

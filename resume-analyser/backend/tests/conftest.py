@@ -14,8 +14,6 @@ import os
 os.environ["DEBUG"] = "true"
 os.environ.setdefault("SECRET_KEY", "dev-insecure-secret-key-change-me")
 os.environ.setdefault("WARM_UP_MODELS_ON_STARTUP", "false")
-os.environ.setdefault("AUTO_CREATE_TABLES", "true")
 os.environ.setdefault("ENABLE_METRICS", "true")
 os.environ.setdefault("REDIS_URL", "")
 os.environ.setdefault("SENTRY_DSN", "")
-os.environ.setdefault("DATABASE_URL", "sqlite:///./test_resume_analyser.db")

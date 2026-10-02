@@ -32,10 +32,6 @@ DOCS_ACCESS_TOTAL = Counter(
     "docs_access_total",
     "Attempts to access disabled API documentation endpoints",
 )
-DB_HEALTH_STATUS = Gauge(
-    "db_health_status",
-    "Database reachability (1 = reachable, 0 = unreachable)",
-)
 IN_PROGRESS = Gauge(
     "http_requests_in_progress",
     "Requests currently being served",
@@ -63,7 +59,3 @@ def record_metrics(method: str, endpoint: str, status: int, duration: float) -> 
 
 def record_docs_blocked() -> None:
     DOCS_ACCESS_TOTAL.inc()
-
-
-def set_db_health(reachable: bool) -> None:
-    DB_HEALTH_STATUS.set(1 if reachable else 0)

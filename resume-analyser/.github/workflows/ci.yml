@@ -35,15 +35,6 @@ jobs:
           WARM_UP_MODELS_ON_STARTUP: "false"
         run: python -m pytest tests/ -v --tb=short
 
-      - name: Verify Alembic migration applies cleanly
-        env:
-          SECRET_KEY: ci-test-secret-key-not-for-production-0123456789
-          DATABASE_URL: sqlite:///./ci_mig_test.db
-        run: |
-          alembic upgrade head
-          alembic downgrade base
-          rm -f ci_mig_test.db
-
   frontend-tests:
     name: Frontend tests & build
     runs-on: ubuntu-latest

@@ -1,17 +1,21 @@
-"""Resume upload & retrieval endpoints."""
+"""Resume upload endpoint (stateless).
+
+There is no server-side storage: the parsed resume is returned in the
+upload response and the client keeps it (browser localStorage). The
+analysis endpoint accepts the parsed resume inline, so the backend is
+a pure function of each request — safe on read-only, ephemeral
+serverless filesystems (Vercel, Lambda, …).
+"""
 from __future__ import annotations
 
 import uuid
 from pathlib import Path
 
 import structlog
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
-from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.db.database import get_db
-from app.db import crud
 from app.schemas import ResumeUploadResponse
 from app.services.extractor import extract_text, validate_magic_bytes
 from app.services.parser import parse_resume
@@ -32,7 +36,6 @@ ALLOWED = set(settings.ALLOWED_EXTENSIONS)
 async def upload_resume(
     file: UploadFile | None = File(default=None),
     files: list[UploadFile] = File(default_factory=list),
-    db: Session = Depends(get_db),
 ):
     """
     Supports both `file` and `files` form keys for compatibility with browsers,
@@ -91,36 +94,23 @@ async def upload_resume(
         log.error("extraction_failed", filename=chosen_file.filename, error=str(exc))
         raise HTTPException(status_code=500, detail="Failed to extract text from file.")
 
-    # ── Parse & persist ────────────────────────────────────────────────────
+    # ── Parse ──────────────────────────────────────────────────────────────
     parsed = await run_in_threadpool(parse_resume, raw_text)
     word_count = len(raw_text.split())
     resume_id = str(uuid.uuid4())
 
-    crud.save_resume(db, resume_id, chosen_file.filename, page_count, word_count, parsed)
-    log.info("resume_uploaded", resume_id=resume_id, filename=chosen_file.filename, skills=len(parsed.skills))
+    log.info(
+        "resume_uploaded",
+        resume_id=resume_id,
+        filename=chosen_file.filename,
+        skills=len(parsed.skills),
+    )
 
+    # The full parsed resume is returned to the client — nothing is
+    # stored server-side.
     return ResumeUploadResponse(
         resume_id=resume_id,
         filename=chosen_file.filename,
-        parsed=parsed,
-        word_count=word_count,
-        page_count=page_count,
-    )
-
-
-@router.get(
-    "/{resume_id}",
-    response_model=ResumeUploadResponse,
-    summary="Get a previously uploaded resume",
-)
-async def get_resume(resume_id: str, db: Session = Depends(get_db)):
-    record = crud.get_resume(db, resume_id)
-    if not record:
-        raise HTTPException(status_code=404, detail="Resume not found.")
-    filename, page_count, word_count, parsed = record
-    return ResumeUploadResponse(
-        resume_id=resume_id,
-        filename=filename,
         parsed=parsed,
         word_count=word_count,
         page_count=page_count,

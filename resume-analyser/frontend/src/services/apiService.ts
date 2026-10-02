@@ -3,7 +3,6 @@ import type {
   ResumeUploadResponse,
   AnalyseRequest,
   AnalysisResult,
-  AnalysisHistoryResponse,
   JobDescriptionRequest,
   JobRoleTemplate,
 } from '@/types/api'
@@ -31,31 +30,10 @@ export async function uploadResume(file: File): Promise<ResumeUploadResponse> {
   return data
 }
 
-export async function getResume(resumeId: string): Promise<ResumeUploadResponse> {
-  const { data } = await api.get<ResumeUploadResponse>(`/resume/${resumeId}`)
-  return data
-}
-
 // ── Analysis ───────────────────────────────────────────────────────────────
 
 export async function runAnalysis(req: AnalyseRequest): Promise<AnalysisResult> {
   const { data } = await api.post<AnalysisResult>('/analysis/', req)
-  return data
-}
-
-export async function getAnalysis(analysisId: string): Promise<AnalysisResult> {
-  const { data } = await api.get<AnalysisResult>(`/analysis/${analysisId}`)
-  return data
-}
-
-export async function listAnalyses(
-  resumeId?: string,
-  limit = 20,
-  offset = 0,
-): Promise<AnalysisHistoryResponse> {
-  const { data } = await api.get<AnalysisHistoryResponse>('/analysis/', {
-    params: { limit, offset, ...(resumeId ? { resume_id: resumeId } : {}) },
-  })
   return data
 }
 
