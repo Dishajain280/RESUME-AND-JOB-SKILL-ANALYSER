@@ -1,0 +1,421 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Resume Analyser — Technical Audit Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 40px 20px 60px;
+  }
+  .page { max-width: 760px; margin: 0 auto; }
+
+  /* Header */
+  .report-header {
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 20px;
+    margin-bottom: 32px;
+  }
+  .report-header h1 { font-size: 22px; font-weight: 700; color: #1f2328; }
+  .report-header p  { color: #57606a; font-size: 13px; margin-top: 4px; }
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .badge-red    { background: #fee2e2; color: #b91c1c; }
+  .badge-yellow { background: #fef9c3; color: #854d0e; }
+  .badge-green  { background: #dcfce7; color: #166534; }
+  .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+  .badge-purple { background: #ede9fe; color: #6d28d9; }
+
+  /* Section headers */
+  h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2328;
+    margin: 36px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h3 { font-size: 14px; font-weight: 600; color: #1f2328; margin: 0 0 6px; }
+
+  /* Cards */
+  .card {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .card.danger  { border-left: 4px solid #ef4444; background: #fff5f5; }
+  .card.warning { border-left: 4px solid #f59e0b; background: #fffbeb; }
+  .card.info    { border-left: 4px solid #3b82f6; background: #eff6ff; }
+  .card.success { border-left: 4px solid #22c55e; background: #f0fdf4; }
+
+  .card-title { font-weight: 700; font-size: 13.5px; margin-bottom: 6px; }
+  .card-sub   { color: #57606a; font-size: 12.5px; line-height: 1.55; }
+  .card-sub code {
+    background: #e5e7eb;
+    color: #374151;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+  }
+  .card-label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+
+  /* Two-col grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* Enhancement table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: #f7f8fa;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    font-weight: 600;
+    color: #374151;
+  }
+  td { padding: 8px 12px; border: 1px solid #e5e7eb; vertical-align: top; color: #374151; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .pri-high   { color: #b91c1c; font-weight: 600; }
+  .pri-med    { color: #854d0e; font-weight: 600; }
+  .pri-low    { color: #166534; font-weight: 600; }
+
+  /* Summary tally */
+  .tally {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  @media (max-width: 480px) { .tally { grid-template-columns: repeat(2, 1fr); } }
+  .tally-box {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .tally-box .num  { font-size: 26px; font-weight: 800; line-height: 1; }
+  .tally-box .lbl  { font-size: 11px; color: #57606a; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .num-red    { color: #ef4444; }
+  .num-yellow { color: #f59e0b; }
+  .num-blue   { color: #3b82d4; }
+  .num-green  { color: #22c55e; }
+
+  ul.check { list-style: none; padding: 0; }
+  ul.check li { padding: 3px 0; font-size: 13px; color: #374151; }
+  ul.check li::before { content: "✓  "; color: #22c55e; font-weight: 700; }
+
+  footer {
+    margin-top: 60px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 12px;
+    color: #57606a;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  
+  <div class="report-header">
+    <h1>AI Resume Analyser — Technical Audit Report</h1>
+    <p>Full-stack review · FastAPI backend + React/TypeScript frontend · Prepared for candidate self-review</p>
+    <div class="badge-row">
+      <span class="badge badge-red">5 Critical Issues</span>
+      <span class="badge badge-yellow">7 Code Smells</span>
+      <span class="badge badge-green">4 Things Done Well</span>
+      <span class="badge badge-blue">15 Future Enhancements</span>
+    </div>
+  </div>
+
+  
+  <div class="tally">
+    <div class="tally-box"><div class="num num-red">5</div><div class="lbl">Critical / Showstoppers</div></div>
+    <div class="tally-box"><div class="num num-yellow">7</div><div class="lbl">Code Smells / Weaknesses</div></div>
+    <div class="tally-box"><div class="num num-green">4</div><div class="lbl">Solid Decisions</div></div>
+    <div class="tally-box"><div class="num num-blue">15</div><div class="lbl">Future Features</div></div>
+  </div>
+
+
+  
+  <h2>🚨 Part 1 — Critical Issues a Recruiter Will Spot</h2>
+  <p style="color:#57606a;font-size:13px;margin-bottom:18px">These are the issues most likely to cost you the position. A senior reviewer will open each file and find these within minutes.</p>
+
+  <div class="card danger">
+    <div class="card-label" style="color:#b91c1c">Critical #1 — Architecture</div>
+    <div class="card-title">In-Memory Store Is the Data Layer — No Database</div>
+    <div class="card-sub">
+      <code>store.py</code> uses plain Python dicts (<code>_resumes</code>, <code>_analyses</code>). Every server restart wipes all data. There is no file persistence, no SQLite, no PostgreSQL. The README says "replace with a real DB", which means the candidate knew but shipped it anyway. A recruiter sees this as half-built. Even a simple <code>SQLite + SQLAlchemy</code> integration takes ~30 minutes and would flip this from a red flag to a green tick.
+    </div>
+  </div>
+
+  <div class="card danger">
+    <div class="card-label" style="color:#b91c1c">Critical #2 — Security</div>
+    <div class="card-title">Hard-Coded Default SECRET_KEY Shipped in Source Code</div>
+    <div class="card-sub">
+      <code>config.py</code> line 23: <code>SECRET_KEY: str = "change-me-in-production-use-a-long-random-string"</code>. This default is committed to the repo. Even though there is no active auth flow, the skeleton imports <code>python-jose</code> and <code>passlib</code> — meaning a reviewer knows auth was planned. Shipping a known-bad secret key is a textbook security fail. It should be <code>Field(...)</code> with no default, forcing the environment to always provide it.
+    </div>
+  </div>
+
+  <div class="card danger">
+    <div class="card-label" style="color:#b91c1c">Critical #3 — Logic Bug</div>
+    <div class="card-title">ATS Tips Function Is Broken — Always Returns the Same 5 Tips</div>
+    <div class="card-sub">
+      <code>analyser.py</code> lines 362–366: <code>_ats_tips_for_resume()</code> checks if <code>"table"</code> is in the resume text to decide what to return, but the branch that uses that condition never executes — both paths return <code>tips[:5]</code>. The function signature promises contextual tips but delivers a static slice regardless of resume content. A recruiter testing with a complex resume will see the same 5 generic tips every single time. This is a dead-code / untested logic bug.
+    </div>
+  </div>
+
+  <div class="card danger">
+    <div class="card-label" style="color:#b91c1c">Critical #4 — Backend Reliability</div>
+    <div class="card-title">No Rate Limiting, No File-Size Pre-Check, No Auth on Any Endpoint</div>
+    <div class="card-sub">
+      Every endpoint is fully open. File size is validated <em>after</em> the full file is read into memory (not streamed), meaning a 500 MB file will be buffered before being rejected. There is no rate limiting on <code>/resume/upload</code> or <code>/analysis/</code> — a simple loop could OOM the server. The JWT/auth skeleton is declared in <code>config.py</code> (<code>ACCESS_TOKEN_EXPIRE_MINUTES</code>, <code>SECRET_KEY</code>) but never wired to any route. A senior engineer sees declared intent with zero follow-through.
+    </div>
+  </div>
+
+  <div class="card danger">
+    <div class="card-label" style="color:#b91c1c">Critical #5 — Duplicate Dependency &amp; Test Gap</div>
+    <div class="card-title"><code>httpx</code> Listed Twice in requirements.txt + Only 4 Tests Total</div>
+    <div class="card-sub">
+      <code>requirements.txt</code> lines 17 and 20 both declare <code>httpx==0.27.0</code>. While pip resolves this without error, it signals that the file was not reviewed before commit. More importantly, there are only 4 test functions covering the entire backend. There are zero tests for: the parser (<code>parser.py</code>), the skill extraction logic, the extractor fallback paths, education scoring edge cases, or any frontend behaviour. A project presented as "production-quality" needs a real test suite.
+    </div>
+  </div>
+
+
+  
+  <h2>⚠️ Part 2 — Code Smells &amp; Technical Weaknesses</h2>
+
+  <div class="card warning">
+    <div class="card-label" style="color:#854d0e">Weakness #1 — NLP</div>
+    <div class="card-title">Skill Matching Is Pure String Matching — Not Real NLP</div>
+    <div class="card-sub">
+      Despite importing <code>spacy==3.7.4</code>, <code>sentence-transformers==2.7.0</code>, and <code>scikit-learn</code> in <code>requirements.txt</code>, none of these libraries are actually called in the analysis pipeline. The entire "AI" in "AI Resume Analyser" is <code>re.compile(...).search(text_lower)</code>. That is keyword spotting, not NLP. If a recruiter or interviewer asks "walk me through your NLP approach", the honest answer is regex over a dictionary.
+    </div>
+  </div>
+
+  <div class="card warning">
+    <div class="card-label" style="color:#854d0e">Weakness #2 — Parser Accuracy</div>
+    <div class="card-title">Experience &amp; Education Parsers Are Fragile</div>
+    <div class="card-sub">
+      <code>parser.py _extract_experience()</code> splits on blank lines and guesses job title from <code>lines[0]</code> and company from <code>lines[1]</code> — this breaks on any non-standard resume format. Single-column resumes with dense text, two-column PDFs, or resumes with dates on the same line as job title will all parse incorrectly. <code>_extract_education()</code> has a hardcoded <code>field: ""</code> — the field of study is never populated, affecting the education score.
+    </div>
+  </div>
+
+  <div class="card warning">
+    <div class="card-label" style="color:#854d0e">Weakness #3 — Scoring Logic</div>
+    <div class="card-title">Experience Score Has an Uncontrolled Ceiling Bug</div>
+    <div class="card-sub">
+      <code>analyser.py _compute_experience_score()</code> line 221: when <code>ratio &gt;= 1.0</code> it returns <code>min(100.0, 70.0 + ratio * 10)</code>. For a candidate with 20 years vs a 3-year requirement, ratio = 6.67, giving <code>70 + 66.7 = 136.7</code> which is clamped to 100 — correct numerically but the base of 70 means <em>any</em> matching candidate starts at 70/100 minimum. If required_years = 0, it hard-returns 85 for everyone, hiding true gaps.
+    </div>
+  </div>
+
+  <div class="card warning">
+    <div class="card-label" style="color:#854d0e">Weakness #4 — Frontend Step 3</div>
+    <div class="card-title">Step 3 in the Wizard Is a Dead UI State</div>
+    <div class="card-sub">
+      <code>AnalysePage.tsx</code> lines 113–121: Step 3 renders "Review &amp; Submit" with only a "Back" button. There is no Analyse button, no summary of what will be submitted, and no way to proceed from step 3. The only way to actually run the analysis is on Step 2. Step 3 is visible in the stepper but functionally unreachable for the intended purpose — users who click "next" from step 2 end up confused. The <code>handleAnalyse</code> is only called from the <code>JobDescriptionForm</code> inside step 2.
+    </div>
+  </div>
+
+  <div class="card warning">
+    <div class="card-label" style="color:#854d0e">Weakness #5 — Share Feature</div>
+    <div class="card-title">"Share" Button Shares a URL That Won't Work After Server Restart</div>
+    <div class="card-sub">
+      <code>ResultsPage.tsx</code> line 19: clicking Share copies the URL (e.g. <code>/results/abc-123</code>) to the clipboard. But the analysis is stored in-memory (<code>store.py</code>). On any server restart, that <code>analysis_id</code> is gone. The share feature promises a persistent link but delivers a broken one every time. This is a direct consequence of Critical #1 but also a user-facing feature that actively misleads users.
+    </div>
+  </div>
+
+  <div class="card warning">
+    <div class="card-label" style="color:#854d0e">Weakness #6 — Production Config</div>
+    <div class="card-sub">
+      <strong>reload=True in production entry point.</strong> <code>main.py</code> line 83: <code>uvicorn.run(..., reload=True)</code>. File-watching reloaders are for development only — they add significant overhead and can cause race conditions in production. This is the <code>__main__</code> block so it only runs via <code>python main.py</code>, but it's still a flag that was not cleaned up.
+    </div>
+  </div>
+
+  <div class="card warning">
+    <div class="card-label" style="color:#854d0e">Weakness #7 — Frontend Error Handling</div>
+    <div class="card-sub">
+      <strong>Axios error messages surface raw server internals.</strong> <code>api.ts</code> lines 12–16: the interceptor sets <code>err.message = detail</code>, which can expose internal error strings (e.g. Python tracebacks if the global handler ever fails). The <code>toast.error(msg)</code> calls in <code>ResumeUploader.tsx</code> and <code>AnalysePage.tsx</code> blindly display whatever comes back. In production, a sanitised "Something went wrong" message should be shown to users while the raw error is only logged.
+    </div>
+  </div>
+
+
+  
+  <h2>✅ Part 3 — What Was Done Well</h2>
+
+  <div class="grid2">
+    <div class="card success">
+      <div class="card-title">Clean Architecture &amp; Project Structure</div>
+      <div class="card-sub">Clear separation of concerns: <code>extractor → parser → analyser → store → endpoint</code>. Service layer is dependency-injected by import, Pydantic v2 schemas are well-defined, and the API is versioned (<code>/api/v1/</code>). This is senior-level organisation.</div>
+    </div>
+    <div class="card success">
+      <div class="card-title">Strong Frontend Component Design</div>
+      <div class="card-sub">React components are small and purpose-built. <code>ScoreGauge</code>, <code>SkillMatchGrid</code>, <code>SkillChart</code> are reusable. Form validation uses Zod + react-hook-form correctly, with schema mirroring the backend constraints (min 50 chars, max 10,000).</div>
+    </div>
+    <div class="card success">
+      <div class="card-title">Structured Logging + Global Error Handler</div>
+      <div class="card-sub"><code>structlog</code> is used consistently across all services. The global <code>exception_handler</code> in <code>main.py</code> catches unhandled errors. Request timing middleware adds <code>X-Process-Time</code> headers — a genuinely production-oriented detail.</div>
+    </div>
+    <div class="card success">
+      <div class="card-title">Comprehensive Skill Knowledge Base</div>
+      <div class="card-sub">140+ skills across 7 categories with canonical name normalisation, alias resolution, and per-skill confidence scores. This is thorough domain modelling that shows real thought about the problem.</div>
+    </div>
+  </div>
+
+
+  
+  <h2>🚀 Part 4 — Future Enhancements Roadmap</h2>
+  <p style="color:#57606a;font-size:13px;margin-bottom:18px">Grouped by impact tier. Implement high-priority items first — they directly fix recruiter concerns and add real demonstrable value.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:5%">#</th>
+        <th style="width:30%">Feature</th>
+        <th style="width:14%">Priority</th>
+        <th style="width:51%">What It Adds</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><strong>Persistent Database (SQLite → PostgreSQL)</strong></td>
+        <td><span class="pri-high">High</span></td>
+        <td>Replace in-memory store with SQLAlchemy + Alembic migrations. Fixes history, share links, and restarts. Makes the app actually production-ready.</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><strong>User Authentication (JWT)</strong></td>
+        <td><span class="pri-high">High</span></td>
+        <td>Wire the existing <code>python-jose</code> / <code>passlib</code> skeleton into real register/login endpoints. Each user sees only their own analyses. The infrastructure is 80% already declared in <code>config.py</code>.</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><strong>Real NLP with spaCy / Sentence-Transformers</strong></td>
+        <td><span class="pri-high">High</span></td>
+        <td>Replace regex skill matching with spaCy NER + sentence-transformers semantic similarity. Catches "ML Engineer" matching "Machine Learning", synonyms, and context-aware matches. These libraries are already in <code>requirements.txt</code> — just not used.</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><strong>PDF Export of Analysis Report</strong></td>
+        <td><span class="pri-high">High</span></td>
+        <td>Generate a downloadable PDF of the full analysis using <code>weasyprint</code> or a React-to-PDF library. The "Export" button already exists in the UI (currently just calls <code>window.print()</code>).</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><strong>Resume Score Comparison (Multi-JD)</strong></td>
+        <td><span class="pri-med">Medium</span></td>
+        <td>Allow users to upload one resume and compare it against multiple job descriptions side-by-side. Show a comparison table of scores. Great for job seekers choosing between offers.</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td><strong>LLM-Powered Recommendations (OpenAI / Gemini API)</strong></td>
+        <td><span class="pri-med">Medium</span></td>
+        <td>Replace the static template-based recommendations with an LLM call that generates personalised, context-aware advice (e.g. "Given your 4 years of Python and missing Kubernetes, here's a 30-day plan..."). Add an optional API key field in settings.</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td><strong>Resume Builder / Keyword Injector</strong></td>
+        <td><span class="pri-med">Medium</span></td>
+        <td>After analysis, show which exact phrases from the JD are missing in the resume, and offer to generate bullet points or summary rewrites that include them. Turns the tool from an analyser into a resume editor.</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td><strong>Job Description Auto-Import (URL Scraping)</strong></td>
+        <td><span class="pri-med">Medium</span></td>
+        <td>Let users paste a LinkedIn / Indeed / Greenhouse job URL instead of copy-pasting text. Use <code>httpx</code> + <code>BeautifulSoup</code> to scrape and auto-fill the description field. <code>httpx</code> is already a dependency.</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td><strong>Score Trend Dashboard</strong></td>
+        <td><span class="pri-med">Medium</span></td>
+        <td>In the History page, add a line chart showing score progression over time per job category. Shows users whether their skills are improving. Recharts is already in the frontend bundle.</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td><strong>Docker Compose Setup</strong></td>
+        <td><span class="pri-med">Medium</span></td>
+        <td>Add <code>Dockerfile</code> for backend + frontend and a <code>docker-compose.yml</code>. One-command startup removes the "it works on my machine" problem and is a strong signal of DevOps awareness. Directly mentioned in the README as missing.</td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td><strong>Resume Anonymisation / Privacy Mode</strong></td>
+        <td><span class="pri-low">Low</span></td>
+        <td>Strip PII (name, email, phone, address) from the stored resume before persisting to the database. Show a "Privacy Mode" toggle. Strong differentiator for GDPR-conscious users or enterprise HR teams.</td>
+      </tr>
+      <tr>
+        <td>12</td>
+        <td><strong>Role-Specific Skill Templates</strong></td>
+        <td><span class="pri-low">Low</span></td>
+        <td>Pre-built skill requirement profiles (e.g. "Data Scientist", "DevOps Engineer", "Product Manager") that users can load as a JD template. Lowers friction for people who don't have a specific JD at hand.</td>
+      </tr>
+      <tr>
+        <td>13</td>
+        <td><strong>Salary Range Estimator</strong></td>
+        <td><span class="pri-low">Low</span></td>
+        <td>Based on matched skills, experience years, and location field, show a salary band estimate sourced from a static dataset or a public API (e.g. levels.fyi data). Adds immediate tangible value to users.</td>
+      </tr>
+      <tr>
+        <td>14</td>
+        <td><strong>Browser Extension</strong></td>
+        <td><span class="pri-low">Low</span></td>
+        <td>A Chrome/Firefox extension that detects when a user is on a job posting page, extracts the JD text, and opens a side panel showing the match score against their saved resume. Turns the web app into an ambient tool.</td>
+      </tr>
+      <tr>
+        <td>15</td>
+        <td><strong>Multi-Language Resume Support</strong></td>
+        <td><span class="pri-low">Low</span></td>
+        <td>Expand section detection and skill matching to handle resumes in French, German, Spanish, and Portuguese (large markets). spaCy has multilingual models (<code>xx_ent_wiki_sm</code>). Enables international use cases.</td>
+      </tr>
+    </tbody>
+  </table>
+
+
+  
+  <h2>📋 Part 5 — Quick Fix Checklist</h2>
+  <p style="color:#57606a;font-size:13px;margin-bottom:12px">Do these before showing the project to anyone. Each takes under 30 minutes.</p>
+  <div class="card info">
+    <ul class="check">
+      <li>Remove duplicate <code>httpx==0.27.0</code> line from <code>requirements.txt</code></li>
+      <li>Change <code>SECRET_KEY</code> default to <code>Field(...)</code> — no fallback value</li>
+      <li>Fix <code>_ats_tips_for_resume()</code> to actually use resume content to select relevant tips</li>
+      <li>Remove <code>reload=True</code> from the <code>uvicorn.run()</code> in <code>main.py</code></li>
+      <li>Fix Step 3 of the wizard — add an "Analyse" button or remove the dead step</li>
+      <li>Add at least 10 more tests: parser, skill extraction, education scoring, extractor fallbacks</li>
+      <li>Add <code>education.field</code> extraction in <code>_extract_education()</code> (currently always <code>""</code>)</li>
+      <li>Add a note in the UI that "Share" links are session-only until persistence is added</li>
+    </ul>
+  </div>
+
+  <footer>Made with IBM Bob</footer>
+</div>
+</body>
+</html>

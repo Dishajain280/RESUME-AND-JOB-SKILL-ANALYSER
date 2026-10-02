@@ -1,0 +1,53 @@
+[project]
+name = "resume-analyser-backend"
+version = "1.1.0"
+description = "AI Resume & Job Skill Analyser API"
+# Vercel's Python runtime supports 3.12 (default), 3.13, 3.14.
+# Upper-bounded to 3.12: numpy==1.26.4 / PyMuPDF==1.24.3 / spacy==3.7.4
+# have prebuilt wheels only up to 3.12.
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi==0.111.0",
+    "uvicorn[standard]==0.29.0",
+    "python-multipart==0.0.9",
+    "pydantic==2.7.1",
+    "pydantic-settings==2.2.1",
+    "PyMuPDF==1.24.3",
+    "pytesseract==0.3.13",
+    "Pillow>=10.0.0",
+    "python-docx==1.1.2",
+    "numpy==1.26.4",
+    # 3.7.5+ (not 3.7.4): relaxed typer<1.0.0 constraint, which
+    # resolves the conflict with fastapi-cli's typer>=0.12.3.
+    "spacy==3.7.5",
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl",
+    "httpx==0.27.0",
+    "python-jose[cryptography]==3.3.0",
+    "passlib[bcrypt]==1.7.4",
+    "aiofiles==23.2.1",
+    "structlog==24.1.0",
+    "sqlalchemy==2.0.30",
+    "alembic==1.13.2",
+    # Rate limiting (shared counters across workers/replicas)
+    "redis==5.0.4",
+    # Prometheus metrics at /metrics
+    "prometheus-client==0.20.0",
+    # Optional error tracking (enabled only when SENTRY_DSN is set)
+    "sentry-sdk[fastapi]==2.3.1",
+]
+
+[dependency-groups]
+# Not needed at runtime — kept out of the deployed bundle.
+dev = [
+    "pytest==8.2.0",
+    "pytest-asyncio==0.23.6",
+]
+
+[tool.uv]
+# This is an application, not an installable package:
+# uv sync must install dependencies only, never the project itself.
+package = false
+
+[tool.vercel]
+# Matches the entrypoint in vercel.json services.backend.
+entrypoint = "main:app"
