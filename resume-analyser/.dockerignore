@@ -1,0 +1,15 @@
+# Keep backend images small and rebuilds fast
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.db
+*.sqlite*
+.env
+uploads/
+tests/
+.git/

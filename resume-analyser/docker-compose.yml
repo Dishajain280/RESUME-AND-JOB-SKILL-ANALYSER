@@ -1,0 +1,60 @@
+name: resume-analyser
+
+services:
+  # ── Redis: shared rate-limit counters across workers/replicas ─────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - internal
+
+  # ── FastAPI backend ─────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env            # must define SECRET_KEY (required in prod mode)
+    environment:
+      DEBUG: "false"
+      REDIS_URL: redis://redis:6379/0
+      TRUST_PROXY_HEADERS: "true"   # nginx overwrites X-Forwarded-For
+      AUTO_CREATE_TABLES: "false"   # entrypoint runs `alembic upgrade head`
+      DATABASE_URL: sqlite:////data/resume_analyser.db
+      WEB_CONCURRENCY: "2"          # uvicorn workers
+    volumes:
+      - api-data:/data              # SQLite persistence (swap for Postgres in prod)
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+    # Not published to the host: nginx is the single entrypoint.
+
+  # ── Frontend (nginx serving the SPA + proxying API/metrics) ────────────────
+  web:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"                     # change to e.g. "8080:80" if 80 is taken
+    depends_on:
+      - api
+    networks:
+      - internal
+
+volumes:
+  api-data:
+  redis-data:
+
+networks:
+  internal:
+    driver: bridge
